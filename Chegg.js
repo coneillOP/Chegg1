@@ -104,7 +104,7 @@ function checkRule(dlRulesID) {
                     passed = passed && results.passed;
                     results = { passed: false, found: false};
                 }
-                console.log(response.tags[i2].clause, "Rule " + response.name + " passed: " + passed);
+                console.log("Rule " + response.name + " passed: " + passed);
 
             }
         }
