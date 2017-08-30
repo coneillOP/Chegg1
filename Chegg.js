@@ -1,4 +1,3 @@
-// Rules GET
 var ruleIDarr = []
 var data = {
     requestUrl: "https://api.observepoint.com/v2/rules",
@@ -13,8 +12,6 @@ opReq.onreadystatechange = function() {
         var response = JSON.parse(opReq.responseText)
         for (i = 0; i < response.length; i++) {
             if (response[i].name.indexOf("dataLayer") > -1) {
-                // console.log(response[i].name);
-                // console.log(response[i].id);
                 var ruleNum = response[i].id
                 ruleIDarr.push(response[i].id);
             }
@@ -24,7 +21,6 @@ opReq.onreadystatechange = function() {
 }
 opReq.open("POST", baseURL, true);
 opReq.send(JSON.stringify(data));
-// Individual Rule Validation
 function doOperation(operator, actual, expected) {
     switch (operator) {
         case "Equal":
@@ -47,29 +43,16 @@ function doOperation(operator, actual, expected) {
             return actual <= expected;
     }
 }
-var results = { passed: false, found: false};
 function checkVariable(key, value, variable, operator, expected) {
-    // console.log(key, value, variable);
     if(key === variable){
         passed = doOperation(operator, value, expected);
         results.found = true;
         results.passed = passed;
     }
 }
-function iterObj(obj, variable, operator, expectedValue) {
-    for (var key in obj) {
-        checkVariable(key, obj[key], variable, operator, expectedValue)
-        if (results.found) {
-            return results.passed;
-        }
-        if (obj[key] !== null && typeof(obj[key])== "object") {
-            //going one step down in the object tree!!
-            iterObj(obj[key], variable, operator, expectedValue);
-        }
-    }
-    if(!results.found){
-        results.passed = operator == "NotSet";
-    }
+function index(obj, i) {
+    // console.log(obj[i]);
+    return obj[i]?obj[i]:null;
 }
 var ruleArr = [];
 function checkRule(dlRulesID) {
@@ -84,31 +67,45 @@ function checkRule(dlRulesID) {
     opReq.onreadystatechange = function() {
         if (opReq.readyState == 4 && opReq.status == 200){
             var response = JSON.parse(opReq.responseText)
-            console.log(response);
             for (var i2 = 0; i2 < response.tags.length; i2++){
-                // if(response.tags[i2].clause !== "Then"){
-                //     continue;
-                // }
                 if(!response.tags[i2].variables){
                     continue;
                 }
-                var passed = true;
-                for (var i = 0; i < response.tags[i2].variables.length; i++) {
-                    // console.log(response.tags[i2].variables[i]);
-                    ruleArr.push(response.tags[i2].variables[i]);
-                    var variableName = response.tags[i2].variables[i].variable;
-                    var operator = response.tags[i2].variables[i].matchType;
-                    var valueName = response.tags[i2].variables[i].value;
-                    // Data Layer Loop
-                    iterObj(digitalData, variableName, operator, valueName);
-                    passed = passed && results.passed;
-                    results = { passed: false, found: false};
+                if(response.tags[i2].clause == "If") {
+                  var passed = true;
+                  for (var i = 0; i < response.tags[i2].variables.length; i++) {
+                      ruleArr.push(response.tags[i2].variables[i]);
+                      var variableName = response.tags[i2].variables[i].variable;
+                      var operator = response.tags[i2].variables[i].matchType;
+                      var valueName = response.tags[i2].variables[i].value;
+                      var variable = variableName.split('.').reduce(index, digitalData);
+                      if(variable != null)
+                      {
+                        passed = passed && doOperation(operator, variable, valueName);
+                      } else passed = false;
+                    }
+                    if(passed == false) {
+                      console.log("Rule: " + response.name + " is not applicable");
+                      return;
+                    }
+                }else if (response.tags[i2].clause == "Then"){
+                  var passed = true;
+                  for (var i = 0; i < response.tags[i2].variables.length; i++) {
+                      ruleArr.push(response.tags[i2].variables[i]);
+                      var variableName = response.tags[i2].variables[i].variable;
+                      var operator = response.tags[i2].variables[i].matchType;
+                      var valueName = response.tags[i2].variables[i].value;
+                      var variable = variableName.split('.').reduce(index, digitalData);
+                      if(variable != null)
+                      {
+                        passed = passed && doOperation(operator, variable, valueName);
+                      } else passed = false;
+                    }
+                  console.log(response.name + ": "+ passed);
                 }
-                console.log("Rule " + response.name + " passed: " + passed);
-
             }
+          }
         }
-    }
     opReq.open("POST", baseURL, true);
     opReq.send(JSON.stringify(data));
 }
