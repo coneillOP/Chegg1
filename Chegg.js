@@ -43,17 +43,11 @@ function doOperation(operator, actual, expected) {
             return actual <= expected;
     }
 }
-function checkVariable(key, value, variable, operator, expected) {
-    if(key === variable){
-        passed = doOperation(operator, value, expected);
-        results.found = true;
-        results.passed = passed;
-    }
-}
+
 function index(obj, i) {
-    // console.log(obj[i]);
     return obj[i]?obj[i]:null;
 }
+var resultsArr = [];
 var ruleArr = [];
 function checkRule(dlRulesID) {
     var data = {
@@ -85,7 +79,6 @@ function checkRule(dlRulesID) {
                       } else passed = false;
                     }
                     if(passed == false) {
-                      console.log("Rule: " + response.name + " is not applicable");
                       return;
                     }
                 }else if (response.tags[i2].clause == "Then"){
@@ -101,11 +94,20 @@ function checkRule(dlRulesID) {
                         passed = passed && doOperation(operator, variable, valueName);
                       } else passed = false;
                     }
-                  console.log(response.name + ": "+ passed);
+                  // resultsArr.push(response.name + ": "+ passed);
+                  resultsArr.push(response.name + ": "+ variableName + " " + passed);
                 }
             }
           }
         }
     opReq.open("POST", baseURL, true);
     opReq.send(JSON.stringify(data));
+}
+// setTimeout(function(){ console.log(JSON.stringify(resultsArr)); }, 3000);
+
+setTimeout(function(){ for (var i in resultsArr) {
+  console.log( resultsArr[i] );
+} }, 3000);
+for (var i in resultsArr) {
+  console.log( resultsArr[i] );
 }
