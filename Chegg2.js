@@ -1,8 +1,8 @@
 
-var lsTimeStamp = 10;
+var lsTimeStamp = 0;
 var results = []
 
-if(!localStorage.timeStamp || isTimeExpired()){
+if(!localStorage.timeStamp || isTimeExpired(lsTimeStamp)){
   localStorage.clear()
   getRuleIds()
   console.log("Make API Calls");
@@ -64,16 +64,17 @@ function getRulesWithId(id) {
   opReq.onreadystatechange = function() {
     if(opReq.readyState == 4 && opReq.status == 200) {
       localStorage.setItem(`${id}`, opReq.responseText)
-      // console.log(JSON.parse(opReq.responseText));
     }
   }
 }
 
-function isTimeExpired(){
+function isTimeExpired(timer){
   var now = Math.round(new Date().getTime()/60000)
   var timeStamp = Number(localStorage.timeStamp);
-  timeStamp = timeStamp + lsTimeStamp;
+  timeStamp = timeStamp + timer;
   if (now >= timeStamp){
+    return true;
+  } else {
     return false;
   }
 }
@@ -100,7 +101,6 @@ function validate() {
 }
 
 function validateRules(response) {
-  // var results = []
   for (var i = 0; i < response.tags.length; i++) {
     var summary;
     var variables = response.tags[i].variables
