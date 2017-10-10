@@ -252,7 +252,14 @@ class KickoffDataLayer {
   }
 
   index(obj, i) {
-    return obj[i]?obj[i]:null;
+    if(i.indexOf('[') !== -1 && i.indexOf(']') !== -1) {
+      var arrIndex = parseInt(i.substring(i.lastIndexOf("[") + 1, i.lastIndexOf("]")));
+      i = i.substr(0, i.indexOf('['));
+      return obj[i][arrIndex]?obj[i][arrIndex]:null;
+    }
+    else {
+      return obj[i]?obj[i]:null;
+    }
   }
 }
 var init = new KickoffDataLayer();
